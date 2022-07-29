@@ -153,8 +153,8 @@ def get_eut(t):
     return (math.e-1)/(t*(math.e-math.e**(1-(1/t))))
 
 
-def F_Y_shuffle(arr, n):
-    for i in range(n - 1, 0, -1):
+def F_Y_shuffle(arr):
+    for i in range(len(arr) - 1, 0, -1):
         j = randint(0, i + 1)
         arr[i], arr[j] = arr[j], arr[i]
     return arr
@@ -168,9 +168,11 @@ def gaptopk_secure(Q,K,eps):
 
         begin_time=time.time()
 
+        begin_addnoise_time = time.time()
         for q in Q:
             Y0 = sample_geometric_exp_fast(eps*gamma, 2*K)
             Qhat.append(q + gamma*Y0)
+        total_addnoise_time = time.time() - begin_addnoise_time
 
         gamma0 = gamma
         t = 1
@@ -179,9 +181,12 @@ def gaptopk_secure(Q,K,eps):
 
         while tie:
             gammat = gamma/M
+
+            begin_addnoisetie_time = time.time()
             for i in range(len(Qhat)):
                 Yt = sample_geometric_exp_fast(eps*gammat, 2*K)
                 Qhat[i] = Qhat[i] + gammat*(Yt % M)
+            total_addnoisetie_time = time.time() - begin_addnoisetie_time
 
             Qhat_sorted = Qhat.copy()
             j = np.argpartition(Qhat_sorted,-(K+2))[-(K+2):]
@@ -192,7 +197,7 @@ def gaptopk_secure(Q,K,eps):
                 tie = False
             t = t+1
 
-        x = F_Y_shuffle(list(range(K+1)), K+1)
+        x = F_Y_shuffle(list(range(1,K+2)))
 
         g=[]
         for i in range(K):
@@ -205,13 +210,13 @@ def gaptopk_secure(Q,K,eps):
         for k in range(K):
             result.append((j[i],g[i]))
 
-        return result
+        total_time = time.time() - begin_time
+        return total_time, total_addnoise_time, total_addnoisetie_time
 
 if __name__=='__main__':
 
-    Q = list(np.arange(0.0,1000.0,0.1))
-    print(gaptopk_secure(Q, 2, 1))
-
+    Q = list(np.arange(0.0,100000.0,0.1))
+    print(gaptopk_secure(Q, 3, 1))
 
 
     ###### Bern and Geom plotting below ######
